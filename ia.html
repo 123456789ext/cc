@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            max-height: 700px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+
+        .bot .message-content {
+            background: #e9ecef;
+            color: #333;
+            border-bottom-left-radius: 0;
+        }
+
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .typing {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+        }
+
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .quick-reply {
+            padding: 8px 12px;
+            background: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .quick-reply:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 IA Assistant</h1>
+            <p>Bienvenue! Comment puis-je vous aider?</p>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="message bot">
+                <div class="message-content">
+                    Salut! 👋 Je suis votre assistant IA. Comment allez-vous aujourd'hui? Je peux vous aider avec des questions, des conversations, ou simplement discuter.
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-field">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="Écrivez votre message..." 
+                    autocomplete="off"
+                >
+                <button onclick="sendMessage()">Envoyer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const responses = {
+            default: [
+                "C'est intéressant! Pouvez-vous m'en dire plus?",
+                "Je comprends. Comment puis-je vous aider davantage?",
+                "D'accord, c'est noté! Y a-t-il autre chose?",
+                "Intéressant! Avez-vous d'autres questions?"
+            ],
+            greeting: [
+                "Salut! Ça va bien, merci de demander! 😊",
+                "Bonjour! Je vais bien, comment allez-vous?",
+                "Coucou! Ravi de vous rencontrer! 👋"
+            ],
+            help: [
+                "Je suis ici pour vous aider avec n'importe quelle question!",
+                "Bien sûr! Je peux vous assister avec diverses tâches.",
+                "Absolument! Que puis-je faire pour vous?"
+            ],
+            time: [
+                `L'heure actuelle est: ${new Date().toLocaleTimeString('fr-FR')}`,
+                `Il est actuellement ${new Date().toLocaleTimeString('fr-FR')}`
+            ],
+            date: [
+                `Aujourd'hui c'est: ${new Date().toLocaleDateString('fr-FR')}`,
+                `La date du jour est: ${new Date().toLocaleDateString('fr-FR')}`
+            ],
+            joke: [
+                "Pourquoi les plongeurs plongent-ils toujours en arrière? Parce que sinon ils tombent dans le bateau! 😄",
+                "Quel est le comble pour un électricien? De ne pas être au courant! ⚡",
+                "Pourquoi les poissons n'aiment pas jouer au tennis? Parce qu'ils ont peur du filet! 🎾"
+            ],
+            name: [
+                "Je m'appelle IA Assistant! Enchanté de vous rencontrer! 🤖",
+                "Je suis IA Assistant, votre compagnon numérique!"
+            ]
+        };
+
+        function getResponse(userMessage) {
+            const msg = userMessage.toLowerCase().trim();
+
+            if (msg.includes('salut') || msg.includes('bonjour') || msg.includes('coucou') || msg.includes('hello')) {
+                return responses.greeting[Math.floor(Math.random() * responses.greeting.length)];
+            }
+            if (msg.includes('aide') || msg.includes('help') || msg.includes('besoin')) {
+                return responses.help[Math.floor(Math.random() * responses.help.length)];
+            }
+            if (msg.includes('heure') || msg.includes('quelle heure')) {
+                return responses.time[Math.floor(Math.random() * responses.time.length)];
+            }
+            if (msg.includes('date') || msg.includes('aujourd hui') || msg.includes('aujourd\'hui')) {
+                return responses.date[Math.floor(Math.random() * responses.date.length)];
+            }
+            if (msg.includes('blague') || msg.includes('joke') || msg.includes('rigolo')) {
+                return responses.joke[Math.floor(Math.random() * responses.joke.length)];
+            }
+            if (msg.includes('nom') || msg.includes('qui es') || msg.includes('ton nom')) {
+                return responses.name[Math.floor(Math.random() * responses.name.length)];
+            }
+
+            return responses.default[Math.floor(Math.random() * responses.default.length)];
+        }
+
+        function addMessage(text, sender) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `<div class="message-content">${text}</div>`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const userMessage = input.value.trim();
+
+            if (userMessage === '') return;
+
+            addMessage(userMessage, 'user');
+            input.value = '';
+
+            // Afficher l'animation de "typing"
+            const messagesDiv = document.getElementById('messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.innerHTML = '<div class="message-content"><div class="typing"><span></span><span></span><span></span></div></div>';
+            typingDiv.id = 'typing';
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Simuler le délai de réponse
+            setTimeout(() => {
+                const typingElement = document.getElementById('typing');
+                if (typingElement) typingElement.remove();
+
+                const response = getResponse(userMessage);
+                addMessage(response, 'bot');
+            }, 800 + Math.random() * 700);
+        }
+
+        // Permettre d'envoyer le message avec Entrée
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Focus sur l'input au chargement
+        document.getElementById('userInput').focus();
+    </script>
+</body>
+</html>
